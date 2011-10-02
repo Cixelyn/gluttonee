@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <html>
-  <head>
+  <head>{% block head %}
     <title>Gluttonee: Satiate your HUNGER!</title>
     <link href="/static/style.css" media="screen" rel="stylesheet" type="text/css"/>
     <script src="/static/json2.js"></script>
     <script src="/static/jquery-1.6.4.js"></script>
     <script src="/static/underscore.js"></script>
     <script src="/static/backbone.js"></script>
+    <script src="/static/raphael.js"></script>
     <script src="/static/application.js"></script>
-  </head>
+    {% endblock %}</head>
   <body>
     {% block content %}
 

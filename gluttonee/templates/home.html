@@ -1,4 +1,14 @@
 {% extends "_base.html" %}
+{% block head %}
+  {{ super() }}
+  <script type='text/javascript'>
+    $(document).ready(function() {
+      GT.home.init();
+    });
+  </script>
+{% endblock %}
+
 {% block content %}
-  Hello World
+  <div id="canvas">
+  </div>
 {% endblock %}
