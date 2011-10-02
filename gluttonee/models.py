@@ -8,11 +8,13 @@ from flaskext.mongokit import Document
 
 class User(Document):
   __collection__ = 'users'
+  # TODO(jven): UNICODE!!!!!!!!
   structure = {
-      'first_name':unicode,
-      'last_name':unicode,
-      'password':unicode,
-      'address':unicode,
+      'first_name':str,
+      'last_name':str,
+      'email':str,
+      'password':str,
+      'address':str,
       'credit_card_number':int,
       'credit_card_code':int,
       'credit_card_exp_month':int,
