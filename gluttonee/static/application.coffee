@@ -185,22 +185,26 @@ GT.home = ( ->
           eve.unbind('key', keyEvent)
           prevState.restore()
         when 38
-          selectIdx = (selectIdx + elen - 1) % elen
+          selectIdx = Math.max(selectIdx-1,0)
           updateEntrees()
         when 39
           eve.stop()
           eve.unbind('key', keyEvent)
           prevState.restore()
         when 40
-          selectIdx = (selectIdx + 1) % elen
+          selectIdx = Math.min(elen-1, selectIdx + 1)
           updateEntrees()
 
     updateEntrees = () ->
       for e,idx in entreesList
         e.handle.animate {
           x: sX(0.7)
-          y: (idx - selectIdx) * 220
-        }
+          y: (idx - selectIdx) * 100 + sY(0.5)
+        }, 300
+        e.handle[0].animate {
+          opacity: 0.5 - Math.abs(idx-selectIdx) * 0.2
+          fill: if idx == selectIdx then '#ff00cc' else '#110000'
+        },50
 
 
 
@@ -220,11 +224,11 @@ GT.home = ( ->
           if val['children']? then val['children'] else val
         )
 
-        for entree in entrees
+        for entree in entrees[0..10]
           st = r.set()
           st.push(
-            r.rect(0, 0, 400, 220, 10),
-            r.text(400, 220, entree.name)
+            r.rect(0, 0, 400, 100, 10),
+            r.text(0, 0, entree.name).translate(50, 20)
           )
 
           entreesList.push {
@@ -232,7 +236,7 @@ GT.home = ( ->
             handle: st
           }
 
-        selectIdx = entrees.length
+        selectIdx = Math.floor(entreesList.length / 2)
         updateEntrees()
 
   )

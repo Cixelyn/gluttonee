@@ -201,14 +201,14 @@
             eve.unbind('key', keyEvent);
             return prevState.restore();
           case 38:
-            selectIdx = (selectIdx + elen - 1) % elen;
+            selectIdx = Math.max(selectIdx - 1, 0);
             return updateEntrees();
           case 39:
             eve.stop();
             eve.unbind('key', keyEvent);
             return prevState.restore();
           case 40:
-            selectIdx = (selectIdx + 1) % elen;
+            selectIdx = Math.min(elen - 1, selectIdx + 1);
             return updateEntrees();
         }
       };
@@ -217,10 +217,14 @@
         _results = [];
         for (idx = 0, _len = entreesList.length; idx < _len; idx++) {
           e = entreesList[idx];
-          _results.push(e.handle.animate({
+          e.handle.animate({
             x: sX(0.7),
-            y: (idx - selectIdx) * 220
-          }));
+            y: (idx - selectIdx) * 100 + sY(0.5)
+          }, 300);
+          _results.push(e.handle[0].animate({
+            opacity: 0.5 - Math.abs(idx - selectIdx) * 0.2,
+            fill: idx === selectIdx ? '#ff00cc' : '#110000'
+          }, 50));
         }
         return _results;
       };
@@ -237,7 +241,7 @@
           return $.getJSON('/get_ordrin_data', {
             rID: venue.ordin.id
           }, function(data) {
-            var entree, entrees, st, _i, _len;
+            var entree, entrees, st, _i, _len, _ref;
             entrees = _.flatten(_.map(data['menu'], function(val) {
               if (val['children'] != null) {
                 return val['children'];
@@ -245,16 +249,17 @@
                 return val;
               }
             }));
-            for (_i = 0, _len = entrees.length; _i < _len; _i++) {
-              entree = entrees[_i];
+            _ref = entrees.slice(0, 11);
+            for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+              entree = _ref[_i];
               st = r.set();
-              st.push(r.rect(0, 0, 400, 220, 10), r.text(400, 220, entree.name));
+              st.push(r.rect(0, 0, 400, 100, 10), r.text(0, 0, entree.name).translate(50, 20));
               entreesList.push({
                 details: entree,
                 handle: st
               });
             }
-            selectIdx = entrees.length;
+            selectIdx = Math.floor(entreesList.length / 2);
             return updateEntrees();
           });
         }
