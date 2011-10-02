@@ -89,9 +89,10 @@
       var addVenue, keyEvent, lbl_name, listVenues, randomImage, selectVenue, updateVenue, _this;
       _this = null;
       randomImage = function() {
-        var img;
+        var foodImgs, img;
         img = {};
-        img.handle = centerImage('http://placekitten.com/100/100', Math.random(), Math.random(), 100, 100);
+        foodImgs = ['http://www.blogthingsimages.com/thepizzatest/pizza-9.jpg', 'http://embedgames.ru/wp-content/thumbs/fast-food-car.jpg', 'http://www.clipartguide.com/_thumbs/0511-1004-2020-3204.jpg', 'http://www.free-clip-art.com/members/content/gallery/Food_Clip_Art/tn_Food084.jpg', 'http://www.unclewaynes.net/images/BreadBowlCL.jpg', 'http://images.meredith.com/bhg/images/07/s_pie.jpg', 'http://www.blogthingsimages.com/whatkindofpieareyouquiz/pumpkin-pie.jpg'];
+        img.handle = centerImage(foodImgs[Math.floor(Math.random() * foodImgs.length)], Math.random(), Math.random(), 100, 100);
         img.handle.attr({
           opacity: '0.0'
         }).animate({
@@ -165,10 +166,11 @@
             fill: '#fff'
           });
           return $.getJSON('/get_delivering_restaurants', null, function(data) {
-            var handle, info, _i, _len;
+            var foodImgs, handle, info, _i, _len;
             for (_i = 0, _len = data.length; _i < _len; _i++) {
               info = data[_i];
-              handle = centerImage('http://placekitten.com/100/100', Math.random(), Math.random(), 100, 100);
+              foodImgs = ['http://www.kitchenproject.com/pizza/images/Spaghettiand%20meatball%20pizza.jpg', 'http://www.bigoven.com/pics/rs/256/pizza-unos-deep-pan-chicago-style-p.jpg', 'http://www.bigoven.com/pics/rs/256/tuna-pasta-bake-3.jpg', 'http://nimarcospizza.com/foodimgs/quad_pizza_tn.jpg', 'http://www.bigoven.com/pics/rs/256/thai-grilled-pizza-4.jpg', 'http://www.foodandbeverageunderground.com/image-files/san-miguel-de-allende-restaurants.jpg', 'http://www.unclewaynes.net/images/BreadBowlCL.jpg', 'http://images.meredith.com/bhg/images/07/s_pie.jpg', 'http://www.bgfoods.com/bgcondiments/images/cuban_sandwich.jpg', 'http://www.andysensei.com/blog/wp-images/pictures/Japan/China/chinaFood01.jpg', 'http://files.blog-city.com/files/A06/59565224/p/f/chinese_food.jpg', 'http://www.blogthingsimages.com/whatkindofpieareyouquiz/pumpkin-pie.jpg'];
+              handle = centerImage(foodImgs[Math.floor(Math.random() * foodImgs.length)], Math.random(), Math.random(), 100, 100);
               addVenue({
                 ordin: info,
                 handle: handle
