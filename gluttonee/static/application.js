@@ -57,14 +57,13 @@
       keyEvent = function(e) {
         switch (e.which) {
           case 13:
-            return t_handle.stop().animate({
+            t_handle.stop().animate({
               opacity: '0.0'
-            }, 1000, function() {
-              clearInterval(intervalHandler);
-              viewVenueWheel().exec();
-              eve.stop();
-              return eve.unbind('key', keyEvent);
-            });
+            }, 1000);
+            clearInterval(intervalHandler);
+            viewVenueWheel().exec();
+            eve.stop();
+            return eve.unbind('key', keyEvent);
         }
       };
       fontattr = {
@@ -81,42 +80,44 @@
           }, function(data) {
             flickrData = data.items;
             intervalHandler = setInterval(randomImage, 1000);
-            eve.on('key', keyEvent);
-            return console.log(flickrData);
+            return eve.on('key', keyEvent);
           });
         }
       };
     });
     viewVenueWheel = (__bind(function() {
-      var addVenue, keyEvent, listVenues, randomImage, selectVenue, updateVenue, _this;
+      var addVenue, keyEvent, lbl_name, listVenues, randomImage, selectVenue, updateVenue, _this;
       _this = null;
       randomImage = function() {
         var img;
-        img = centerImage('http://placekitten.com/100/100', Math.random(), Math.random(), 100, 100);
-        return img.attr({
+        img = {};
+        img.handle = centerImage('http://placekitten.com/100/100', Math.random(), Math.random(), 100, 100);
+        img.handle.attr({
           opacity: '0.0'
         }).animate({
           opacity: '1.0'
         }, 2000);
+        return img;
       };
       listVenues = [];
       selectVenue = 0;
+      lbl_name = null;
       addVenue = function(img) {
         return listVenues.push(img);
       };
       updateVenue = function() {
-        var ele, idx, vlen, _len, _results;
+        var ele, idx, vlen, _len;
         vlen = listVenues.length;
-        _results = [];
         for (idx = 0, _len = listVenues.length; idx < _len; idx++) {
           ele = listVenues[idx];
-          _results.push(ele.animate({
+          ele.handle.animate({
             x: sX(0.5 + 0.3 * Math.sin(2 * Math.PI * (idx - selectVenue) / vlen)),
             y: sY(0.5 - 0.3 * Math.cos(2 * Math.PI * (idx - selectVenue) / vlen)),
+            transform: idx === selectVenue ? 's1.5' : 's1',
             easing: 'backOut'
-          }, 500));
+          }, 500);
         }
-        return _results;
+        return lbl_name.attr('text', listVenues[selectVenue].ordin.na);
       };
       keyEvent = function(e) {
         var ele, idx, vlen, _len;
@@ -132,7 +133,7 @@
             for (idx = 0, _len = listVenues.length; idx < _len; idx++) {
               ele = listVenues[idx];
               if (idx !== selectVenue) {
-                ele.stop().animate({
+                ele.handle.stop().animate({
                   opacity: '0.0'
                 }, 100);
               }
@@ -144,11 +145,11 @@
       };
       return {
         restore: function() {
-          var ele, _i, _len;
+          var ven, _i, _len;
           eve.on('key', keyEvent);
           for (_i = 0, _len = listVenues.length; _i < _len; _i++) {
-            ele = listVenues[_i];
-            ele.stop().animate({
+            ven = listVenues[_i];
+            ven.handle.stop().animate({
               opacity: '1.0'
             }, 100);
           }
@@ -159,43 +160,97 @@
           _this = this;
           console.log(this);
           eve.on('key', keyEvent);
-          addVenue(randomImage());
-          addVenue(randomImage());
-          addVenue(randomImage());
-          addVenue(randomImage());
-          addVenue(randomImage());
-          addVenue(randomImage());
-          addVenue(randomImage());
-          return updateVenue();
+          lbl_name = r.text(gWidth / 2, 60, '').attr({
+            font: '40px "Nothing You Could Do"',
+            fill: '#fff'
+          });
+          return $.getJSON('/get_delivering_restaurants', null, function(data) {
+            var handle, info, _i, _len;
+            for (_i = 0, _len = data.length; _i < _len; _i++) {
+              info = data[_i];
+              handle = centerImage('http://placekitten.com/100/100', Math.random(), Math.random(), 100, 100);
+              addVenue({
+                ordin: info,
+                handle: handle
+              });
+              console.log(info);
+              handle.attr({
+                opacity: '0.0'
+              }).animate({
+                opacity: '1.0'
+              }, 2000);
+            }
+            return updateVenue();
+          });
         }
       };
     }, this));
     viewVenueDetails = (function() {
-      var keyEvent, prevState;
+      var entreesList, keyEvent, prevState, selectIdx, updateEntrees;
       prevState = null;
+      entreesList = [];
+      selectIdx = 0;
       keyEvent = function(e) {
+        var elen;
+        elen = entreesList.length;
         switch (e.which) {
           case 27:
             eve.stop();
             eve.unbind('key', keyEvent);
             return prevState.restore();
-          case 37:
-            return null;
           case 38:
-            return null;
+            selectIdx = (selectIdx + elen - 1) % elen;
+            return updateEntrees();
           case 40:
-            return null;
+            selectIdx = (selectIdx + 1) % elen;
+            return updateEntrees();
         }
+      };
+      updateEntrees = function() {
+        var e, idx, _len, _results;
+        _results = [];
+        for (idx = 0, _len = entreesList.length; idx < _len; idx++) {
+          e = entreesList[idx];
+          _results.push(e.handle.animate({
+            x: sX(0.7),
+            y: (idx - selectIdx) * 220
+          }));
+        }
+        return _results;
       };
       return {
         exec: function(_prev, venue) {
           prevState = _prev;
           eve.on('key', keyEvent);
-          return venue.animate({
+          venue.handle.animate({
             x: 0,
             y: 0,
-            easing: 'backOut'
+            easing: 'backOut',
+            transform: 's1'
           }, 400);
+          return $.getJSON('/get_ordrin_data', {
+            rID: venue.ordin.id
+          }, function(data) {
+            var entree, entrees, st, _i, _len;
+            entrees = _.flatten(_.map(data['menu'], function(val) {
+              if (val['children'] != null) {
+                return val['children'];
+              } else {
+                return val;
+              }
+            }));
+            for (_i = 0, _len = entrees.length; _i < _len; _i++) {
+              entree = entrees[_i];
+              st = r.set();
+              st.push(r.rect(0, 0, 400, 220, 10), r.text(400, 220, entree.name));
+              entreesList.push({
+                details: entree,
+                handle: st
+              });
+            }
+            selectIdx = entrees.length;
+            return updateEntrees();
+          });
         }
       };
     });

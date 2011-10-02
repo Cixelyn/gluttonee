@@ -43,11 +43,11 @@ GT.home = ( ->
     keyEvent = (e) ->
       switch e.which
         when 13
-          t_handle.stop().animate {opacity: '0.0'}, 1000, ->
-            clearInterval(intervalHandler)
-            viewVenueWheel().exec()
-            eve.stop()
-            eve.unbind('key', keyEvent)
+          t_handle.stop().animate {opacity: '0.0'}, 1000
+          clearInterval(intervalHandler)
+          viewVenueWheel().exec()
+          eve.stop()
+          eve.unbind('key', keyEvent)
 
 
     fontattr = {
@@ -70,21 +70,22 @@ GT.home = ( ->
           flickrData = data.items
           intervalHandler = setInterval(randomImage, 1000)
           eve.on('key', keyEvent)
-          console.log(flickrData)
       )
   )
 
 
   viewVenueWheel = ( =>
-
     _this = null
 
     randomImage = () ->
-      img = centerImage('http://placekitten.com/100/100', Math.random(), Math.random(), 100, 100)
-      img.attr({opacity: '0.0'}).animate {opacity: '1.0' }, 2000
+      img = {}
+      img.handle = centerImage('http://placekitten.com/100/100', Math.random(), Math.random(), 100, 100)
+      img.handle.attr({opacity: '0.0'}).animate {opacity: '1.0' }, 2000
+      return img
 
     listVenues = []
     selectVenue = 0
+    lbl_name = null
 
     addVenue = (img) ->
       listVenues.push(img)
@@ -92,11 +93,13 @@ GT.home = ( ->
     updateVenue = () ->
       vlen = listVenues.length
       for ele,idx in listVenues
-        ele.animate {
+        ele.handle.animate {
           x: sX( 0.5 + 0.3 * Math.sin( 2*Math.PI * (idx-selectVenue) / vlen) )
           y: sY( 0.5 - 0.3 * Math.cos( 2*Math.PI * (idx-selectVenue) / vlen) )
+          transform: if idx==selectVenue then 's1.5' else 's1'
           easing: 'backOut'
         }, 500
+      lbl_name.attr('text',listVenues[selectVenue].ordin.na)
 
     keyEvent = (e) ->
 
@@ -111,7 +114,7 @@ GT.home = ( ->
         when 13
           for ele,idx in listVenues
             if idx != selectVenue
-              ele.stop().animate {opacity:'0.0'},100
+              ele.handle.stop().animate {opacity:'0.0'},100
 
           viewVenueDetails().exec(_this,listVenues[selectVenue])
 
@@ -120,51 +123,93 @@ GT.home = ( ->
 
     restore: () ->
       eve.on('key', keyEvent)
-      for ele in listVenues
-        ele.stop().animate {opacity: '1.0'}, 100
+      for ven in listVenues
+        ven.handle.stop().animate {opacity: '1.0'}, 100
       eve.on('key', keyEvent)
       updateVenue()
-
 
 
     exec: () ->
       _this = this
       console.log(this)
       eve.on('key', keyEvent)
-      addVenue(randomImage())
-      addVenue(randomImage())
-      addVenue(randomImage())
-      addVenue(randomImage())
-      addVenue(randomImage())
-      addVenue(randomImage())
-      addVenue(randomImage())
-      updateVenue()
+
+
+      lbl_name = r.text(gWidth/2,60, '').attr {font: '40px "Nothing You Could Do"', fill: '#fff'}
+
+      $.getJSON '/get_delivering_restaurants', null, (data) ->
+        for info in data
+          handle = centerImage('http://placekitten.com/100/100', Math.random(), Math.random(), 100, 100)
+          addVenue({
+            ordin: info
+            handle: handle
+          })
+          console.log(info)
+          handle.attr({opacity: '0.0'}).animate {opacity: '1.0' }, 2000
+
+        updateVenue()
   )
 
   viewVenueDetails = ( ->
     prevState = null
+    entreesList = []
+    selectIdx = 0
 
     keyEvent = (e) ->
+
+      elen = entreesList.length
       switch e.which
         when 27 #escape
           eve.stop()
           eve.unbind('key', keyEvent)
           prevState.restore()
-        when 37
-          null
         when 38
-          null
+          selectIdx = (selectIdx + elen - 1) % elen
+          updateEntrees()
         when 40
-          null
+          selectIdx = (selectIdx + 1) % elen
+          updateEntrees()
+
+    updateEntrees = () ->
+      for e,idx in entreesList
+        e.handle.animate {
+          x: sX(0.7)
+          y: (idx - selectIdx) * 220
+        }
+
+
+
 
     exec: (_prev,venue) ->
       prevState = _prev
       eve.on('key', keyEvent)
-      venue.animate {
+      venue.handle.animate {
         x: 0
         y: 0
         easing: 'backOut'
+        transform: 's1'
       }, 400
+
+      $.getJSON '/get_ordrin_data', {rID: venue.ordin.id}, (data) ->
+        entrees =  _.flatten ( _.map data['menu'], (val) ->
+          if val['children']? then val['children'] else val
+        )
+
+        for entree in entrees
+          st = r.set()
+          st.push(
+            r.rect(0, 0, 400, 220, 10),
+            r.text(400, 220, entree.name)
+          )
+
+          entreesList.push {
+            details: entree
+            handle: st
+          }
+
+        selectIdx = entrees.length
+        updateEntrees()
+
   )
 
 
