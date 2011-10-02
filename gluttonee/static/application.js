@@ -34,7 +34,6 @@
     };
     viewMainMenu = (function() {
       var intervalHandler, keyEvent, randomImage;
-      intervalHandler = null;
       randomImage = function() {
         var img;
         img = centerImage('http://placekitten.com/100/100', Math.random(), Math.random(), 100, 100);
@@ -50,8 +49,8 @@
           });
         });
       };
+      intervalHandler = null;
       keyEvent = function(e) {
-        console.log('triggered!');
         switch (e.which) {
           case 13:
             clearInterval(intervalHandler);
@@ -68,23 +67,56 @@
       };
     });
     viewSelectVenue = (function() {
-      var addVenue, keyEvent, listVenues, selectVenues;
+      var addVenue, keyEvent, listVenues, randomImage, selectVenue, updateVenue;
+      randomImage = function() {
+        var img;
+        img = centerImage('http://placekitten.com/100/100', Math.random(), Math.random(), 100, 100);
+        return img.attr({
+          opacity: '0.0'
+        }).animate({
+          opacity: '1.0'
+        }, 2000);
+      };
       listVenues = [];
-      selectVenues = 0;
+      selectVenue = 0;
       addVenue = function(img) {
         return listVenues.push(img);
       };
+      updateVenue = function() {
+        var ele, idx, vlen, _len, _results;
+        vlen = listVenues.length;
+        console.log(selectVenue);
+        _results = [];
+        for (idx = 0, _len = listVenues.length; idx < _len; idx++) {
+          ele = listVenues[idx];
+          _results.push(ele.animate({
+            x: sX(0.5 + 0.3 * Math.sin(2 * Math.PI * (idx + selectVenue) / vlen)),
+            y: sY(0.5 - 0.3 * Math.cos(2 * Math.PI * (idx + selectVenue) / vlen)),
+            easing: 'backOut'
+          }, 500));
+        }
+        return _results;
+      };
       keyEvent = function(e) {
+        var vlen;
+        vlen = listVenues.length;
         switch (e.which) {
           case 37:
-            return selectVenues = (selectVenues - 1) % listVenues.length;
+            selectVenue = (selectVenue + vlen - 1) % vlen;
+            return updateVenue();
           case 39:
-            return selectVenues = (selectVenues + 1) % listVenues.length;
+            selectVenue = (selectVenue + 1) % vlen;
+            return updateVenue();
         }
       };
       return {
         exec: function() {
-          return eve.on('key', keyEvent);
+          eve.on('key', keyEvent);
+          addVenue(randomImage());
+          addVenue(randomImage());
+          addVenue(randomImage());
+          addVenue(randomImage());
+          return addVenue(randomImage());
         }
       };
     });
@@ -92,7 +124,7 @@
       gWidth = document.body.clientWidth;
       gHeight = document.body.clientHeight;
       r = Raphael('canvas', '100%', '100%');
-      $(document).keypress(function(e) {
+      $(document).keydown(function(e) {
         e.preventDefault();
         return eve('key', null, e);
       });
