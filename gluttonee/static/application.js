@@ -203,6 +203,10 @@
           case 38:
             selectIdx = (selectIdx + elen - 1) % elen;
             return updateEntrees();
+          case 39:
+            eve.stop();
+            eve.unbind('key', keyEvent);
+            return prevState.restore();
           case 40:
             selectIdx = (selectIdx + 1) % elen;
             return updateEntrees();

@@ -187,6 +187,10 @@ GT.home = ( ->
         when 38
           selectIdx = (selectIdx + elen - 1) % elen
           updateEntrees()
+        when 39
+          eve.stop()
+          eve.unbind('key', keyEvent)
+          prevState.restore()
         when 40
           selectIdx = (selectIdx + 1) % elen
           updateEntrees()
