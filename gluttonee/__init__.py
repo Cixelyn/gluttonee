@@ -12,9 +12,8 @@ from flask import render_template
 from flask import request
 from flask import session
 from flask import render_template
-from foursquare import FoursquareAuthHelper
-from foursquare import FoursquareClient
 from hyperpublic import Hyperpublic
+from models import CreditCard
 from models import User
 from flaskext.mongokit import MongoKit
 
@@ -23,17 +22,11 @@ app.debug = True
 app.secret_key = 'omnomnom'
 
 db = MongoKit(app)
-db.register([User])
+db.register([CreditCard, User])
 
-FOURSQUARE_KEY = 'YKM4DZK0JBRA1UY4QWR0TJHCB5HUM2423RVXLNSRKGKV5YWA'
-FOURSQUARE_SECRET = '3UN4F2Z1ROFXY21CLVMSWCTEBL5EJOPAMMFATKCWXXQP15YL'
 HYPERPUBLIC_KEY = 'eDuglow1SWQZjKFm58yUD2ZwBb2Tqfdem8ZgDnQP'
 HYPERPUBLIC_SECRET = 'iouuCxwLmjSFgDCwlG0nQW5XwqHMSnbRQw7X54zT'
 ORDRIN_API_KEY = 'pni78Hs4BGdV-pFu8bTaA'
-
-fs_auth = FoursquareAuthHelper(FOURSQUARE_KEY, FOURSQUARE_SECRET, 'http://hacknyc.org')
-fs_access_token = fs_auth.get_access_token('200')
-fs_client = FoursquareClient(fs_access_token)
 
 hp_client = Hyperpublic(HYPERPUBLIC_KEY, HYPERPUBLIC_SECRET)
 
@@ -57,6 +50,8 @@ def home_test():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+  if g.logged_in_user is not None:
+    return 'You\'re already logged in.'
   if request.method == 'GET':
     return render_template('register.html')
   if request.method == 'POST':
@@ -73,25 +68,48 @@ def register():
     newUser.password = request.form.get('password')
     newUser.street = request.form.get('street')
     newUser.city = request.form.get('city')
-    newUser.zip = request.form.get('zip')
     newUser.state = request.form.get('state')
-    newUser.credit_card_number = request.form.get('credit_card_number')
-    newUser.credit_card_code = request.form.get('credit_card_code')
-    newUser.credit_card_exp_month = request.form.get('credit_card_exp_month')
-    newUser.credit_card_exp_year = request.form.get('credit_card_exp_year')
+    newUser.zip = request.form.get('zip')
+    newUser.phone = request.form.get('phone')
+    newUser.credit_cards = []
     newUser.save()
+    # log them in
+    session['logged_in_id'] = newUser._id
     return 'New user %s created.' % newUser.email
+
+@app.route('/new_credit_card', methods=['GET', 'POST'])
+def new_credit_card():
+  if g.logged_in_user is None:
+    return 'You must be logged in to add a credit card.'
+  if request.method == 'GET':
+    return render_template('new_credit_card.html')
+  if request.method == 'POST':
+    newCard = db.CreditCard()
+    newCard.number = request.form.get('number')
+    newCard.code = request.form.get('code')
+    newCard.exp_month = request.form.get('exp_month')
+    newCard.exp_year = request.form.get('exp_year')
+    newCard.first_name = request.form.get('first_name')
+    newCard.last_name = request.form.get('last_name')
+    newCard.street = request.form.get('street')
+    newCard.city = request.form.get('city')
+    newCard.zip = request.form.get('zip')
+    newCard.state = request.form.get('state')
+    newCard.save()
+    g.logged_in_user.credit_cards.append(newCard)
+    g.logged_in_user.save()
+    return 'New credit card %s created for user %s.' % (
+        newCard.number, g.logged_in_user.email)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+  if g.logged_in_user is not None:
+    return 'You\'re already logged in.'
   if request.method == 'GET':
     return render_template('login.html')
   if request.method == 'POST':
-    try:
-      email = request.form.get('email')
-      password = request.form.get('password')
-    except:
-      return 'Error trying to login.'
+    email = request.form.get('email')
+    password = request.form.get('password')
     user = db.User.find_one({'email':email, 'password':password})
     if user == None:
       return 'No such user.'
@@ -100,91 +118,91 @@ def login():
 
 @app.route('/logout', methods=['GET'])
 def logout():
-  if g.logged_in_user is not None:
+  if g.logged_in_user is None:
+    return 'You aren\'t logged in.'
+  else:
     name = '%s %s' % (g.logged_in_user.first_name,
         g.logged_in_user.last_name)
     session.pop('logged_in_id', None)
     return 'Bye %s!' % name
-  else:
-    return 'You weren\'t logged in.'
 
-@app.route('/get_restaurants', methods=['GET', 'POST'])
-def get_restaurants():
+@app.route('/get_delivering_restaurants', methods=['GET', 'POST'])
+def get_delivering_restaurants():
   if g.logged_in_user is None:
-    return 'You must be logged in to get a list of restaurants.'
+    return 'You must be logged in to get a list of delivering restaurants.'
   if request.method == 'GET':
-    return render_template('get_restaurants.html')
+    return render_template('get_delivering_restaurants.html')
   if request.method == 'POST':
     Ordrin.api.initialize(ORDRIN_API_KEY, 'https://r-test.ordr.in')
-    place = Ordrin.Address(
+    address = Ordrin.Address(
         g.logged_in_user.street,
         g.logged_in_user.city,
-        g.logged_in_user.zip,
-        u'',
-        g.logged_in_user.state,
-        g.logged_in_user.phone,
-        'my_location')
-    when = Ordrin.dTime.now()
-    when.asap()
-    rawList = Ordrin.r.deliveryList(when, place)
+        g.logged_in_user.zip)
+    datetime = Ordrin.dTime.now()
+    datetime.asap()
+    rawList = Ordrin.r.deliveryList(datetime, address)
     restaurants = json.loads(rawList)
     return rawList
 
-@app.route('/get_foursquare_ratings', methods=['GET', 'POST'])
-def get_foursquare_ratings():
+@app.route('/get_ordrin_data', methods=['GET', 'POST'])
+def get_ordrin_data():
   if g.logged_in_user is None:
-    return 'You must be logged in to get Foursquare ratings.'
+    return 'You must be logged in to get Ordr.in data.'
   if request.method == 'GET':
-    return render_template('get_foursquare_ratings.html')
+    return render_template('get_ordrin_data.html')
   if request.method == 'POST':
     Ordrin.api.initialize(ORDRIN_API_KEY, 'https://r-test.ordr.in')
-    place = Ordrin.Address(
-        g.logged_in_user.street,
-        g.logged_in_user.city,
-        g.logged_in_user.zip,
-        u'',
-        g.logged_in_user.state,
-        g.logged_in_user.phone,
-        'my_location')
-    when = Ordrin.dTime.now()
-    when.asap()
-    rawList = Ordrin.r.deliveryList(when, place)
-    restaurants = json.loads(rawList)
-    restaurant_names = [restaurant['na'] for restaurant in restaurants]
-    fs_ratings = [fs_client.make_api_call(
-        fs_client.API_URL + '/venues/search',
-        method='GET',
-        query={'name':restaurant_name}) for restaurant_name in restaurant_names]
-    return str(fs_ratings)
+    rID = request.form.get('rID')
+    restaurant = Ordrin.r.details(rID)
+    return str(restaurant)
 
-@app.route('/get_hyperpublic_ratings', methods=['GET', 'POST'])
-def get_hyperpublic_ratings():
+@app.route('/get_hyperpublic_data', methods=['GET', 'POST'])
+def get_hyperpublic_data():
   if g.logged_in_user is None:
-    return 'You must be logged in to get Hyperpublic ratings.'
+    return 'You must be logged in to get Hyperpublic data.'
   if request.method == 'GET':
-    return render_template('get_hyperpublic_ratings.html')
+    return render_template('get_hyperpublic_data.html')
   if request.method == 'POST':
-    Ordrin.api.initialize(ORDRIN_API_KEY, 'https://r-test.ordr.in')
-    place = Ordrin.Address(
-        g.logged_in_user.street,
-        g.logged_in_user.city,
-        g.logged_in_user.zip,
-        u'',
-        g.logged_in_user.state,
-        g.logged_in_user.phone,
-        'my_location')
+    restaurant_name = request.form.get('restaurant_name')
+    restaurant = None
+    try:
+      restaurant = hp_client.places.find(q=restaurant_name)[0]
+    except:
+      pass
+    return str(restaurant)
+
+@app.route('/order_from_restaurant', methods=['GET', 'POST'])
+def order_from_restaurant():
+  if g.logged_in_user is None:
+    return 'You must be logged in to order from restaurants.'
+  if len(g.logged_in_user.credit_cards) < 1:
+    return 'You must have a credit card on file to order from restaurants.'
+  if request.method == 'GET':
+    return render_template('order_from_restaurant.html')
+  if request.method == 'POST':
+    Ordrin.api.initialize(ORDRIN_API_KEY, 'https://o-test.ordr.in')
+    rID = request.form.get('rID')
+    tray = request.form.get('tray')
+    tip = request.form.get('tip')
+    cc_index = int(request.form.get('cc_index'))
+    credit_card = g.logged_in_user.credit_cards[cc_index]
     when = Ordrin.dTime.now()
     when.asap()
-    rawList = Ordrin.r.deliveryList(when, place)
-    restaurants = json.loads(rawList)
-    restaurant_names = [restaurant['na'] for restaurant in restaurants]
-    hp_ratings = []
-    for restaurant_name in restaurant_names:
-      try:
-        hp_ratings.append(hp_client.places.find(q=restaurant_name)[0])
-      except:
-        hp_ratings.append(None)
-    return str(hp_ratings)
+    first_name = g.logged_in_user.first_name
+    last_name = g.logged_in_user.last_name
+    delivery_address = Ordrin.Address(
+        g.logged_in_user.street,
+        g.logged_in_user.city,
+        g.logged_in_user.zip)
+    billing_address = Ordrin.Address(
+        credit_card['street'],
+        credit_card['city'],
+        credit_card['zip'])
+    orderResponse = Ordrin.o.submit(rID, tray, tip, when, first_name,
+        last_name, delivery_address, credit_card['first_name'] + ' ' +
+        credit_card['last_name'], credit_card['number'], credit_card['code'],
+        credit_card['exp_month'] + '-' + credit_card['exp_year'], billing_address)
+    return str(orderResponse)
 
 @app.route('/drop', methods=['GET'])
 def drop():

@@ -15,12 +15,26 @@ class User(Document):
       'password':unicode,
       'street':unicode,
       'city':unicode,
-      'zip':unicode,
       'state':unicode,
+      'zip':unicode,
       'phone':unicode,
-      'credit_card_number':unicode,
-      'credit_card_code':unicode,
-      'credit_card_exp_month':unicode,
-      'credit_card_exp_year':unicode
+      'credit_cards':list
   }
   use_dot_notation = True
+
+class CreditCard(Document):
+  __collection__ = 'credit_cards'
+  structure = {
+      'number':unicode,
+      'code':unicode,
+      'exp_month':unicode,
+      'exp_year':unicode,
+      'first_name':unicode,
+      'last_name':unicode,
+      'street':unicode,
+      'city':unicode,
+      'zip':unicode,
+      'state':unicode
+  }
+  use_dot_notation = True
+
