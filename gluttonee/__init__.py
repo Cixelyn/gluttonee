@@ -126,13 +126,11 @@ def logout():
     session.pop('logged_in_id', None)
     return 'Bye %s!' % name
 
-@app.route('/get_delivering_restaurants', methods=['GET', 'POST'])
+@app.route('/get_delivering_restaurants', methods=['GET'])
 def get_delivering_restaurants():
   if g.logged_in_user is None:
     return 'You must be logged in to get a list of delivering restaurants.'
   if request.method == 'GET':
-    return render_template('get_delivering_restaurants.html')
-  if request.method == 'POST':
     Ordrin.api.initialize(ORDRIN_API_KEY, 'https://r-test.ordr.in')
     address = Ordrin.Address(
         g.logged_in_user.street,
@@ -144,26 +142,22 @@ def get_delivering_restaurants():
     restaurants = json.loads(rawList)
     return rawList
 
-@app.route('/get_ordrin_data', methods=['GET', 'POST'])
+@app.route('/get_ordrin_data', methods=['GET'])
 def get_ordrin_data():
   if g.logged_in_user is None:
     return 'You must be logged in to get Ordr.in data.'
   if request.method == 'GET':
-    return render_template('get_ordrin_data.html')
-  if request.method == 'POST':
     Ordrin.api.initialize(ORDRIN_API_KEY, 'https://r-test.ordr.in')
-    rID = request.form.get('rID')
+    rID = request.values.get('rID')
     restaurant = Ordrin.r.details(rID)
     return str(restaurant)
 
-@app.route('/get_hyperpublic_data', methods=['GET', 'POST'])
+@app.route('/get_hyperpublic_data', methods=['GET'])
 def get_hyperpublic_data():
   if g.logged_in_user is None:
     return 'You must be logged in to get Hyperpublic data.'
   if request.method == 'GET':
-    return render_template('get_hyperpublic_data.html')
-  if request.method == 'POST':
-    restaurant_name = request.form.get('restaurant_name')
+    restaurant_name = request.values.get('restaurant_name')
     restaurant = None
     try:
       restaurant = hp_client.places.find(q=restaurant_name)[0]
@@ -178,13 +172,11 @@ def order_from_restaurant():
   if len(g.logged_in_user.credit_cards) < 1:
     return 'You must have a credit card on file to order from restaurants.'
   if request.method == 'GET':
-    return render_template('order_from_restaurant.html')
-  if request.method == 'POST':
     Ordrin.api.initialize(ORDRIN_API_KEY, 'https://o-test.ordr.in')
-    rID = request.form.get('rID')
-    tray = request.form.get('tray')
-    tip = request.form.get('tip')
-    cc_index = int(request.form.get('cc_index'))
+    rID = request.values.get('rID')
+    tray = request.values.get('tray')
+    tip = request.values.get('tip')
+    cc_index = int(request.values.get('cc_index'))
     credit_card = g.logged_in_user.credit_cards[cc_index]
     when = Ordrin.dTime.now()
     when.asap()
