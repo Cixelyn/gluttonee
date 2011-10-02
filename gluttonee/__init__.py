@@ -9,10 +9,16 @@ from flask import Flask
 from flask import g
 from flask import request
 from flask import session
+from flask import render_template
 from models import User
 from flaskext.mongokit import MongoKit
 
 app = Flask(__name__)
+app.jinja_options = app.jinja_options.copy()
+app.jinja_options['extensions'].append('hamlish_jinja.HamlishExtension')
+app.jinja_env.hamlish_mode = 'indented'
+app.debug = True
+
 db = MongoKit(app)
 db.register([User])
 
@@ -25,10 +31,11 @@ def before_request():
 
 @app.route('/', methods=['GET'])
 def home():
-  if g.logged_in_user is not None:
-    return 'You\'re logged in as %s.' % g.logged_in_user.email
-  else:
-    return 'You\'re not logged in.'
+  # if g.logged_in_user is not None:
+  #   return 'You\'re logged in as %s.' % g.logged_in_user.email
+  # else:
+  #   return 'You\'re not logged in.'
+  return render_template('home.haml')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
