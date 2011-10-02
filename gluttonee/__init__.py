@@ -14,9 +14,6 @@ from models import User
 from flaskext.mongokit import MongoKit
 
 app = Flask(__name__)
-app.jinja_options = app.jinja_options.copy()
-app.jinja_options['extensions'].append('hamlish_jinja.HamlishExtension')
-app.jinja_env.hamlish_mode = 'indented'
 app.debug = True
 
 db = MongoKit(app)
@@ -35,7 +32,7 @@ def home():
   #   return 'You\'re logged in as %s.' % g.logged_in_user.email
   # else:
   #   return 'You\'re not logged in.'
-  return render_template('home.haml')
+  return render_template('home.html')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
