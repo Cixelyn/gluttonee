@@ -4,6 +4,7 @@ Gluttonee web application.
 
 __author__ = 'Cory Li (coryli@mit.edu), Justin Venezuela (jven@mit.edu)'
 
+import json
 import Ordrin
 from flask import Flask
 from flask import g
@@ -11,6 +12,8 @@ from flask import render_template
 from flask import request
 from flask import session
 from flask import render_template
+from foursquare import FoursquareAuthHelper
+from foursquare import FoursquareClient
 from models import User
 from flaskext.mongokit import MongoKit
 
@@ -21,7 +24,13 @@ app.secret_key = 'omnomnom'
 db = MongoKit(app)
 db.register([User])
 
+FOURSQUARE_KEY = 'YKM4DZK0JBRA1UY4QWR0TJHCB5HUM2423RVXLNSRKGKV5YWA'
+FOURSQUARE_SECRET = '3UN4F2Z1ROFXY21CLVMSWCTEBL5EJOPAMMFATKCWXXQP15YL'
 ORDRIN_API_KEY = 'pni78Hs4BGdV-pFu8bTaA'
+
+fs_auth = FoursquareAuthHelper(FOURSQUARE_KEY, FOURSQUARE_SECRET, 'http://hacknyc.org')
+fs_access_token = fs_auth.get_access_token('200')
+fs_client = FoursquareClient(fs_access_token)
 
 @app.before_request
 def before_request():
@@ -112,7 +121,36 @@ def get_restaurants():
         'my_location')
     when = Ordrin.dTime.now()
     when.asap()
-    return Ordrin.r.deliveryList(when, place)
+    rawList = Ordrin.r.deliveryList(when, place)
+    restaurants = json.loads(rawList)
+    return str(restaurants)
+
+@app.route('/get_foursquare_ratings', methods=['GET', 'POST'])
+def get_foursquare_ratings():
+  if g.logged_in_user is None:
+    return 'You must be logged in to get Foursquare ratings.'
+  if request.method == 'GET':
+    return render_template('get_foursquare_ratings.html')
+  if request.method == 'POST':
+    Ordrin.api.initialize(ORDRIN_API_KEY, 'https://r-test.ordr.in')
+    place = Ordrin.Address(
+        g.logged_in_user.street,
+        g.logged_in_user.city,
+        g.logged_in_user.zip,
+        u'',
+        g.logged_in_user.state,
+        g.logged_in_user.phone,
+        'my_location')
+    when = Ordrin.dTime.now()
+    when.asap()
+    rawList = Ordrin.r.deliveryList(when, place)
+    restaurants = json.loads(rawList)
+    restaurant_names = [restaurant['na'] for restaurant in restaurants]
+    fs_ratings = [fs_client.make_api_call(
+        fs_client.API_URL + '/venues/search',
+        method='GET',
+        query={'name':restaurant_name}) for restaurant_name in restaurant_names]
+    return str(fs_ratings)
 
 @app.route('/drop', methods=['GET'])
 def drop():
