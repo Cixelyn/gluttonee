@@ -14,6 +14,7 @@ from flask import session
 from flask import render_template
 from foursquare import FoursquareAuthHelper
 from foursquare import FoursquareClient
+from hyperpublic import Hyperpublic
 from models import User
 from flaskext.mongokit import MongoKit
 
@@ -26,11 +27,15 @@ db.register([User])
 
 FOURSQUARE_KEY = 'YKM4DZK0JBRA1UY4QWR0TJHCB5HUM2423RVXLNSRKGKV5YWA'
 FOURSQUARE_SECRET = '3UN4F2Z1ROFXY21CLVMSWCTEBL5EJOPAMMFATKCWXXQP15YL'
+HYPERPUBLIC_KEY = 'eDuglow1SWQZjKFm58yUD2ZwBb2Tqfdem8ZgDnQP'
+HYPERPUBLIC_SECRET = 'iouuCxwLmjSFgDCwlG0nQW5XwqHMSnbRQw7X54zT'
 ORDRIN_API_KEY = 'pni78Hs4BGdV-pFu8bTaA'
 
 fs_auth = FoursquareAuthHelper(FOURSQUARE_KEY, FOURSQUARE_SECRET, 'http://hacknyc.org')
 fs_access_token = fs_auth.get_access_token('200')
 fs_client = FoursquareClient(fs_access_token)
+
+hp_client = Hyperpublic(HYPERPUBLIC_KEY, HYPERPUBLIC_SECRET)
 
 @app.before_request
 def before_request():
@@ -123,7 +128,7 @@ def get_restaurants():
     when.asap()
     rawList = Ordrin.r.deliveryList(when, place)
     restaurants = json.loads(rawList)
-    return str(restaurants)
+    return rawList
 
 @app.route('/get_foursquare_ratings', methods=['GET', 'POST'])
 def get_foursquare_ratings():
@@ -151,6 +156,35 @@ def get_foursquare_ratings():
         method='GET',
         query={'name':restaurant_name}) for restaurant_name in restaurant_names]
     return str(fs_ratings)
+
+@app.route('/get_hyperpublic_ratings', methods=['GET', 'POST'])
+def get_hyperpublic_ratings():
+  if g.logged_in_user is None:
+    return 'You must be logged in to get Hyperpublic ratings.'
+  if request.method == 'GET':
+    return render_template('get_hyperpublic_ratings.html')
+  if request.method == 'POST':
+    Ordrin.api.initialize(ORDRIN_API_KEY, 'https://r-test.ordr.in')
+    place = Ordrin.Address(
+        g.logged_in_user.street,
+        g.logged_in_user.city,
+        g.logged_in_user.zip,
+        u'',
+        g.logged_in_user.state,
+        g.logged_in_user.phone,
+        'my_location')
+    when = Ordrin.dTime.now()
+    when.asap()
+    rawList = Ordrin.r.deliveryList(when, place)
+    restaurants = json.loads(rawList)
+    restaurant_names = [restaurant['na'] for restaurant in restaurants]
+    hp_ratings = []
+    for restaurant_name in restaurant_names:
+      try:
+        hp_ratings.append(hp_client.places.find(q=restaurant_name)[0])
+      except:
+        hp_ratings.append(None)
+    return str(hp_ratings)
 
 @app.route('/drop', methods=['GET'])
 def drop():
