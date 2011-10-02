@@ -44,13 +44,21 @@ def register():
   if request.method == 'GET':
     return render_template('register.html')
   if request.method == 'POST':
+    # make sure user with this email doesnt exist
+    user = db.User.find_one({'email':request.form.get('email')})
+    if user is not None:
+      return 'A user with this e-mail already exists.'
+    # make new user
     newUser = db.User()
     newUser.first_name = request.form.get('first_name')
     newUser.last_name = request.form.get('last_name')
     newUser.email = request.form.get('email')
     # TODO(jven): hash this shit
     newUser.password = request.form.get('password')
-    newUser.address = request.form.get('address')
+    newUser.street = request.form.get('street')
+    newUser.city = request.form.get('city')
+    newUser.zip = request.form.get('zip')
+    newUser.state = request.form.get('state')
     newUser.credit_card_number = request.form.get('credit_card_number')
     newUser.credit_card_code = request.form.get('credit_card_code')
     newUser.credit_card_exp_month = request.form.get('credit_card_exp_month')
@@ -87,6 +95,12 @@ def logout():
 @app.route('/get_restaurants', methods=['POST'])
 def get_restaurants():
   pass
+
+@app.route('/drop', methods=['GET'])
+def drop():
+  # TODO(jven): REMOVE THIS!!
+  db.users.drop()
+  return 'Robert\');--DROP TABLE students;--'
 
 if __name__ == '__main__':
   app.run(debug=True)
