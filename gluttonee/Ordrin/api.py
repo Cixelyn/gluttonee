@@ -72,5 +72,4 @@ def _request(type, *args):
   request.get_method = lambda: type
   call = opener.open(request)
   
-  print call.read() # use next line for production -- this one is for testing
-  # return json.loads(response.read())
+  return call.read() # use next line for production -- this one is for testing

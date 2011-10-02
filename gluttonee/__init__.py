@@ -21,6 +21,8 @@ app.secret_key = 'omnomnom'
 db = MongoKit(app)
 db.register([User])
 
+ORDRIN_API_KEY = 'pni78Hs4BGdV-pFu8bTaA'
+
 @app.before_request
 def before_request():
   if 'logged_in_id' in session:
@@ -92,12 +94,30 @@ def logout():
   else:
     return 'You weren\'t logged in.'
 
-@app.route('/get_restaurants', methods=['POST'])
+@app.route('/get_restaurants', methods=['GET', 'POST'])
 def get_restaurants():
-  pass
+  if g.logged_in_user is None:
+    return 'You must be logged in to get a list of restaurants.'
+  if request.method == 'GET':
+    return render_template('get_restaurants.html')
+  if request.method == 'POST':
+    Ordrin.api.initialize(ORDRIN_API_KEY, 'https://r-test.ordr.in')
+    place = Ordrin.Address(
+        g.logged_in_user.street,
+        g.logged_in_user.city,
+        g.logged_in_user.zip,
+        u'',
+        g.logged_in_user.state,
+        g.logged_in_user.phone,
+        'my_location')
+    when = Ordrin.dTime.now()
+    when.asap()
+    return Ordrin.r.deliveryList(when, place)
 
 @app.route('/drop', methods=['GET'])
 def drop():
+  # logout
+  session.pop('logged_in_id', None)
   # TODO(jven): REMOVE THIS!!
   db.users.drop()
   return 'Robert\');--DROP TABLE students;--'
