@@ -36,11 +36,10 @@ GT.home = ( ->
     intervalHandler = null
 
     keyEvent = (e) ->
-      #  console.log('triggered!')
       switch e.which
         when 13
           clearInterval(intervalHandler)
-          viewSelectVenue().exec()
+          viewVenueWheel().exec()
           eve.stop()
           eve.unbind('key', keyEvent)
 
@@ -51,7 +50,9 @@ GT.home = ( ->
   )
 
 
-  viewSelectVenue = ( ->
+  viewVenueWheel = ( =>
+
+    _this = null
 
     randomImage = () ->
       img = centerImage('http://placekitten.com/100/100', Math.random(), Math.random(), 100, 100)
@@ -65,14 +66,12 @@ GT.home = ( ->
 
     updateVenue = () ->
       vlen = listVenues.length
-      console.log(selectVenue)
       for ele,idx in listVenues
         ele.animate {
-          x: sX( 0.5 + 0.3 * Math.sin( 2*Math.PI * (idx+selectVenue) / vlen) )
-          y: sY( 0.5 - 0.3 * Math.cos( 2*Math.PI * (idx+selectVenue) / vlen) )
+          x: sX( 0.5 + 0.3 * Math.sin( 2*Math.PI * (idx-selectVenue) / vlen) )
+          y: sY( 0.5 - 0.3 * Math.cos( 2*Math.PI * (idx-selectVenue) / vlen) )
           easing: 'backOut'
         }, 500
-
 
     keyEvent = (e) ->
 
@@ -84,18 +83,63 @@ GT.home = ( ->
         when 39
           selectVenue = (selectVenue + 1) % vlen
           updateVenue()
+        when 13
+          for ele,idx in listVenues
+            if idx != selectVenue
+              ele.stop().animate {opacity:'0.0'},100
+
+          viewVenueDetails().exec(_this,listVenues[selectVenue])
+
+          eve.stop()
+          eve.unbind('key', keyEvent)
+
+    restore: () ->
+      eve.on('key', keyEvent)
+      for ele in listVenues
+        ele.stop().animate {opacity: '1.0'}, 100
+      eve.on('key', keyEvent)
+      updateVenue()
+
 
 
     exec: () ->
+      _this = this
+      console.log(this)
       eve.on('key', keyEvent)
       addVenue(randomImage())
       addVenue(randomImage())
       addVenue(randomImage())
       addVenue(randomImage())
       addVenue(randomImage())
-
-
+      addVenue(randomImage())
+      addVenue(randomImage())
+      updateVenue()
   )
+
+  viewVenueDetails = ( ->
+    prevState = null
+
+    keyEvent = (e) ->
+      switch e.which
+        when 27
+          eve.stop()
+          eve.unbind('key', keyEvent)
+          prevState.restore()
+        when 37
+          null
+
+
+
+    exec: (_prev,venue) ->
+      prevState = _prev
+      eve.on('key', keyEvent)
+      venue.animate {
+        x: 0
+        y: 0
+        easing: 'backOut'
+      }, 400
+  )
+
 
 
 
