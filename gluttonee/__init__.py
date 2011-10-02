@@ -16,6 +16,7 @@ from flaskext.mongokit import MongoKit
 
 app = Flask(__name__)
 app.debug = True
+app.secret_key = 'omnomnom'
 
 db = MongoKit(app)
 db.register([User])
@@ -29,11 +30,14 @@ def before_request():
 
 @app.route('/', methods=['GET'])
 def home():
-  # if g.logged_in_user is not None:
-  #   return 'You\'re logged in as %s.' % g.logged_in_user.email
-  # else:
-  #   return 'You\'re not logged in.'
   return render_template('home.html')
+
+@app.route('/home', methods=['GET'])
+def home_test():
+  if g.logged_in_user is not None:
+    return 'You\'re logged in as %s.' % g.logged_in_user.email
+  else:
+    return 'You\'re not logged in.'
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
