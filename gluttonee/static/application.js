@@ -34,10 +34,13 @@
       }
     };
     viewMainMenu = (function() {
-      var intervalHandler, keyEvent, randomImage;
+      var flickrData, fontattr, intervalHandler, keyEvent, randomImage, t_handle;
+      flickrData = null;
+      t_handle = null;
       randomImage = function() {
-        var img;
-        img = centerImage('http://placekitten.com/100/100', Math.random(), Math.random(), 100, 100);
+        var idx, img;
+        idx = Math.floor(Math.random() * flickrData.length);
+        img = centerImage(flickrData[idx].media.m, Math.random(), Math.random(), 100, 100);
         return img.attr({
           opacity: '0.0'
         }).animate({
@@ -54,16 +57,33 @@
       keyEvent = function(e) {
         switch (e.which) {
           case 13:
-            clearInterval(intervalHandler);
-            viewVenueWheel().exec();
-            eve.stop();
-            return eve.unbind('key', keyEvent);
+            return t_handle.stop().animate({
+              opacity: '0.0'
+            }, 1000, function() {
+              clearInterval(intervalHandler);
+              viewVenueWheel().exec();
+              eve.stop();
+              return eve.unbind('key', keyEvent);
+            });
         }
+      };
+      fontattr = {
+        font: '70px "Nothing You Could Do"',
+        fill: '#fff'
       };
       return {
         exec: function() {
-          intervalHandler = setInterval(randomImage, 1000);
-          return eve.on('key', keyEvent);
+          t_handle = r.text(gWidth / 2, gHeight / 2, 'Gluttonee').attr(fontattr);
+          return $.getJSON("http://api.flickr.com/services/feeds/photos_public.gne?jsoncallback=?", {
+            tags: "foodporn",
+            tagmode: "any",
+            format: "json"
+          }, function(data) {
+            flickrData = data.items;
+            intervalHandler = setInterval(randomImage, 1000);
+            eve.on('key', keyEvent);
+            return console.log(flickrData);
+          });
         }
       };
     });
@@ -160,6 +180,10 @@
             eve.unbind('key', keyEvent);
             return prevState.restore();
           case 37:
+            return null;
+          case 38:
+            return null;
+          case 40:
             return null;
         }
       };

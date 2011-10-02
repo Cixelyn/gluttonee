@@ -27,8 +27,13 @@ GT.home = ( ->
 
 
   viewMainMenu = ( ->
+
+    flickrData = null
+    t_handle = null
+
     randomImage = () ->
-      img = centerImage('http://placekitten.com/100/100', Math.random(), Math.random(), 100, 100)
+      idx = Math.floor(Math.random()*flickrData.length)
+      img = centerImage(flickrData[idx].media.m, Math.random(), Math.random(), 100, 100)
       img.attr({opacity: '0.0'}).animate {opacity: '1.0' }, 2000, ->
         img.animate {opacity: '0.0'}, 2000, ->
           img.remove()
@@ -38,15 +43,35 @@ GT.home = ( ->
     keyEvent = (e) ->
       switch e.which
         when 13
-          clearInterval(intervalHandler)
-          viewVenueWheel().exec()
-          eve.stop()
-          eve.unbind('key', keyEvent)
+          t_handle.stop().animate {opacity: '0.0'}, 1000, ->
+            clearInterval(intervalHandler)
+            viewVenueWheel().exec()
+            eve.stop()
+            eve.unbind('key', keyEvent)
+
+
+    fontattr = {
+      font: '70px "Nothing You Could Do"'
+      fill: '#fff'
+    }
 
     exec: () ->
-      intervalHandler = setInterval(randomImage, 1000)
-      eve.on('key', keyEvent)
 
+      t_handle = r.text(gWidth/2,gHeight/2,'Gluttonee').attr(fontattr)
+
+
+      # poll flickr
+      $.getJSON("http://api.flickr.com/services/feeds/photos_public.gne?jsoncallback=?",
+        {
+          tags: "foodporn",
+          tagmode: "any",
+          format: "json"
+        }, (data) ->
+          flickrData = data.items
+          intervalHandler = setInterval(randomImage, 1000)
+          eve.on('key', keyEvent)
+          console.log(flickrData)
+      )
   )
 
 
@@ -121,14 +146,16 @@ GT.home = ( ->
 
     keyEvent = (e) ->
       switch e.which
-        when 27
+        when 27 #escape
           eve.stop()
           eve.unbind('key', keyEvent)
           prevState.restore()
         when 37
           null
-
-
+        when 38
+          null
+        when 40
+          null
 
     exec: (_prev,venue) ->
       prevState = _prev
@@ -139,11 +166,6 @@ GT.home = ( ->
         easing: 'backOut'
       }, 400
   )
-
-
-
-
-
 
 
   init = ->
