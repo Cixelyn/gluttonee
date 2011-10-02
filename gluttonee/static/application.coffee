@@ -88,7 +88,7 @@ GT.home = ( ->
         'http://images.meredith.com/bhg/images/07/s_pie.jpg',
         'http://www.blogthingsimages.com/whatkindofpieareyouquiz/pumpkin-pie.jpg']
       img.handle = centerImage(foodImgs[Math.floor(Math.random() * foodImgs.length)], Math.random(), Math.random(), 100, 100)
-      img.handle.attr({opacity: '0.0'}).animate {opacity: '1.0' }, 2000
+      img.handle.translate(-50, 0) .attr({opacity: '0.0'}).animate {opacity: '1.0' }, 2000
       return img
 
     listVenues = []
@@ -102,7 +102,7 @@ GT.home = ( ->
       vlen = listVenues.length
       for ele,idx in listVenues
         ele.handle.animate {
-          x: sX( 0.5 + 0.3 * Math.sin( 2*Math.PI * (idx-selectVenue) / vlen) )
+          x: sX( 0.5 + 0.3 * Math.sin( 2*Math.PI * (idx-selectVenue) / vlen) ) - 50
           y: sY( 0.5 - 0.3 * Math.cos( 2*Math.PI * (idx-selectVenue) / vlen) )
           transform: if idx==selectVenue then 's1.5' else 's1'
           easing: 'backOut'

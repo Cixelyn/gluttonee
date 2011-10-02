@@ -93,7 +93,7 @@
         img = {};
         foodImgs = ['http://www.blogthingsimages.com/thepizzatest/pizza-9.jpg', 'http://embedgames.ru/wp-content/thumbs/fast-food-car.jpg', 'http://www.clipartguide.com/_thumbs/0511-1004-2020-3204.jpg', 'http://www.free-clip-art.com/members/content/gallery/Food_Clip_Art/tn_Food084.jpg', 'http://www.unclewaynes.net/images/BreadBowlCL.jpg', 'http://images.meredith.com/bhg/images/07/s_pie.jpg', 'http://www.blogthingsimages.com/whatkindofpieareyouquiz/pumpkin-pie.jpg'];
         img.handle = centerImage(foodImgs[Math.floor(Math.random() * foodImgs.length)], Math.random(), Math.random(), 100, 100);
-        img.handle.attr({
+        img.handle.translate(-50, 0).attr({
           opacity: '0.0'
         }).animate({
           opacity: '1.0'
@@ -112,7 +112,7 @@
         for (idx = 0, _len = listVenues.length; idx < _len; idx++) {
           ele = listVenues[idx];
           ele.handle.animate({
-            x: sX(0.5 + 0.3 * Math.sin(2 * Math.PI * (idx - selectVenue) / vlen)),
+            x: sX(0.5 + 0.3 * Math.sin(2 * Math.PI * (idx - selectVenue) / vlen)) - 50,
             y: sY(0.5 - 0.3 * Math.cos(2 * Math.PI * (idx - selectVenue) / vlen)),
             transform: idx === selectVenue ? 's1.5' : 's1',
             easing: 'backOut'
